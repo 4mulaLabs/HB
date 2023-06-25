@@ -1,0 +1,13 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.HeartBeat" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/lightBlue</item>
+        <item name="colorPrimaryVariant">@color/teal</item>
+        <item name="colorSecondary">@color/gray</item>
+        <item name="contrast">@color/yellow</item>
+    </style>
+
+    <style name="Theme.HeartBeat" parent="Base.Theme.HeartBeat" />
+</resources>

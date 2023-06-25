@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">heartBeat</string>
+    <string name="sendButton">Send</string>
+    <string name="heartBeatSuccess">Success</string>
+    <string name="emptyIp">xxx.xxx.xxx.xxx</string>
+    <string name="ipTip">Ip</string>
+    <string name="chooseFile">File</string>
+    <string name="fileView">No File Chosen</string>
+</resources>
