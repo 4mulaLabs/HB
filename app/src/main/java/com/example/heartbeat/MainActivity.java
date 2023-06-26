@@ -114,12 +114,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         handler.postDelayed(runnable = new Runnable() {
             public void run() {
-                handler.postDelayed(runnable, CHECKING_DELAY);
                 for (int i = 0; i < destinations.size(); i++) {
                     checkConnection(i);
                 }
+                handler.postDelayed(runnable, CHECKING_DELAY);
             }
-        }, CHECKING_DELAY);
+        }, 0);
         super.onResume();
     }
 
