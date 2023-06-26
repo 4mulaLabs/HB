@@ -1,12 +1,13 @@
 package com.example.heartbeat;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.PersistableBundle;
 import android.provider.OpenableColumns;
 import android.util.Log;
 import android.view.View;
@@ -18,7 +19,6 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import okhttp3.Call;
@@ -54,11 +55,20 @@ public class MainActivity extends AppCompatActivity {
     Handler handler = new Handler();
     Runnable runnable;
     String requestContent = "{}";
+    SharedPreferences sharedPreferences;
+    String preference;
+    SharedPreferences.Editor prefEditor;
+    final String REQUEST_CONTENT_KEY = "requestContent";
+    final String CHOSEN_FILE_KEY = "chosenFile";
+    final String IPS_KEY = "ips";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        sharedPreferences = getSharedPreferences(preference, Context.MODE_PRIVATE);
+        prefEditor = sharedPreferences.edit();
 
         destinationsRV = (RecyclerView) findViewById(R.id.ipAddressRV);
         addButton = (FloatingActionButton) findViewById(R.id.addButton);
@@ -80,6 +90,22 @@ public class MainActivity extends AppCompatActivity {
                 adapter.notifyItemRemoved(position);
             }
         });
+
+        if (savedInstanceState != null) {
+            onRestoreInstanceState(savedInstanceState);
+        }
+        if (sharedPreferences.contains(REQUEST_CONTENT_KEY)) {
+            requestContent = sharedPreferences.getString(REQUEST_CONTENT_KEY, requestContent);
+        }
+        if (sharedPreferences.contains(CHOSEN_FILE_KEY)) {
+            fileTV.setText(
+                    sharedPreferences.getString(CHOSEN_FILE_KEY, fileTV.getText().toString()));
+        }
+        if (sharedPreferences.contains(IPS_KEY)) {
+            for (String ip : sharedPreferences.getStringSet(IPS_KEY, new HashSet<>())) {
+                destinations.add(new Destination(ip));
+            }
+        }
     }
 
     @Override
@@ -141,6 +167,8 @@ public class MainActivity extends AppCompatActivity {
                             String ip = intent.getStringExtra("result");
                             Destination newDestination = new Destination(ip);
                             destinations.add(newDestination);
+                            prefEditor.putStringSet(IPS_KEY, new HashSet<>(getIps()));
+                            prefEditor.apply();
                             adapter.notifyItemInserted(destinations.size());
                         }
                     }
@@ -184,7 +212,8 @@ public class MainActivity extends AppCompatActivity {
                         Uri uri = result.getData().getData();
 
                         fileTV.setText(getFileName(uri));
-
+                        prefEditor.putString(CHOSEN_FILE_KEY, getFileName(uri));
+                        prefEditor.apply();
                         try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
                             InputStreamReader streamReader = new InputStreamReader(inputStream);
                             BufferedReader bufferReader = new BufferedReader(streamReader);
@@ -195,6 +224,8 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                             requestContent = content.toString();
+                            prefEditor.putString(REQUEST_CONTENT_KEY, requestContent);
+                            prefEditor.apply();
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -210,54 +241,33 @@ public class MainActivity extends AppCompatActivity {
         openFileActivityLauncher.launch(intent);
     }
 
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        outState.putString("requestContent", requestContent);
-        outState.putCharSequence("chosenFile", fileTV.getText());
-
-        ArrayList<String> ips = new ArrayList<String>();
+    private ArrayList<String> getIps() {
+        ArrayList<String> ips = new ArrayList<>();
         for (Destination destination : destinations) {
             ips.add(destination.getIpAddress());
         }
-        outState.putStringArrayList("ips", ips);
+        return ips;
     }
 
     @Override
-    public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
-        super.onSaveInstanceState(outState, outPersistentState);
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        outState.putString(REQUEST_CONTENT_KEY, requestContent);
+        outState.putCharSequence(CHOSEN_FILE_KEY, fileTV.getText());
 
-        outPersistentState.putString("requestContent", requestContent);
-        outPersistentState.putString("chosenFile", fileTV.getText().toString());
+        ArrayList<String> ips = getIps();
+        outState.putStringArrayList(IPS_KEY, ips);
 
-        String[] ips = new String[destinations.size()];
-        for (int i = 0; i < destinations.size(); i++) {
-            ips[i] = (destinations.get(i).getIpAddress());
-        }
-        outPersistentState.putStringArray("ips", ips);
+        super.onSaveInstanceState(outState);
     }
-
 
     @Override
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        requestContent = savedInstanceState.getString(REQUEST_CONTENT_KEY);
+        fileTV.setText(savedInstanceState.getCharSequence(CHOSEN_FILE_KEY));
+
+        for (String ip : savedInstanceState.getStringArrayList(IPS_KEY)) {
+            destinations.add(new Destination(ip));
+        }
         super.onRestoreInstanceState(savedInstanceState);
-        requestContent = savedInstanceState.getString("requestContent");
-        fileTV.setText(savedInstanceState.getCharSequence("chosenFile"));
-
-        for (String ip : savedInstanceState.getStringArrayList("ips")) {
-            destinations.add(new Destination(ip));
-        }
-    }
-
-    @Override
-    public void onRestoreInstanceState(@Nullable Bundle savedInstanceState, @Nullable PersistableBundle persistentState) {
-        super.onRestoreInstanceState(savedInstanceState, persistentState);
-        requestContent = persistentState.getString("requestContent");
-        fileTV.setText(persistentState.getString("chosenFile"));
-
-        for (String ip : persistentState.getStringArray("ips")) {
-            destinations.add(new Destination(ip));
-        }
     }
 }
