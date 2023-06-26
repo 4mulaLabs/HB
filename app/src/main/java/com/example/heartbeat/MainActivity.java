@@ -41,7 +41,7 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
 
     static final int SECOND = 1000;
-    static final int CHECKING_DELAY = 120 * SECOND;
+    static final int CHECKING_DELAY = 60 * SECOND;
     static final int REQUEST_PORT = 9000;
     static final String TAG = "Main Activity";
     FloatingActionButton addButton;
@@ -88,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(int position) {
                 destinations.remove(position);
                 adapter.notifyItemRemoved(position);
+                prefEditor.putStringSet(IPS_KEY, new HashSet<>(getIps()));
+                prefEditor.apply();
             }
         });
 
