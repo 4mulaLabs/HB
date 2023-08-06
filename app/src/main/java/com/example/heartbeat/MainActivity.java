@@ -26,6 +26,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import org.json.JSONException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "****************Starting OnCreate*****************************");
         setContentView(R.layout.activity_main);
 
         sharedPreferences = getSharedPreferences(preference, Context.MODE_PRIVATE);
@@ -115,7 +118,11 @@ public class MainActivity extends AppCompatActivity {
         handler.postDelayed(runnable = new Runnable() {
             public void run() {
                 for (int i = 0; i < destinations.size(); i++) {
-                    checkConnection(i);
+                    try {
+                        checkConnection(i);
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
                 handler.postDelayed(runnable, CHECKING_DELAY);
             }
@@ -123,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
     }
 
-    public void checkConnection(int destinationIndex) {
+    public void checkConnection(int destinationIndex) throws JSONException {
         Destination destination = destinations.get(destinationIndex);
         Callback callback = new Callback() {
             @Override

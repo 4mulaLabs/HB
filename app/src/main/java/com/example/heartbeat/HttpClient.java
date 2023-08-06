@@ -5,6 +5,10 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.UUID;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -54,8 +58,12 @@ public class HttpClient {
         client = builder.build();
     }
 
-    public void send(String url, String requestContent, Callback callback) {
-        RequestBody body = RequestBody.create(requestContent.getBytes(StandardCharsets.UTF_8));
+    public void send(String url, String requestContent, Callback callback) throws JSONException {
+        String remoteSessionId = UUID.randomUUID().toString().substring(0,32);
+        JSONObject updatedRequestContentObject = new JSONObject(requestContent);
+        updatedRequestContentObject.put("remoteSessionId", remoteSessionId);
+        String updatedRequestContentString = updatedRequestContentObject.toString();
+        RequestBody body = RequestBody.create(updatedRequestContentString.getBytes(StandardCharsets.UTF_8));
         Request request = new Request.Builder()
                 .url(url)
                 .post(body)
