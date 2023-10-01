@@ -1,11 +1,14 @@
 package com.example.heartbeat;
 
+import android.util.Log;
+
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -58,11 +61,26 @@ public class HttpClient {
         client = builder.build();
     }
 
-    public void send(String url, String requestContent, Callback callback) throws JSONException {
-        String remoteSessionId = UUID.randomUUID().toString().substring(0,32);
+    private JSONObject randomizeUniqueAttrs(String requestContent) throws JSONException {
         JSONObject updatedRequestContentObject = new JSONObject(requestContent);
+
+        String remoteSessionId = UUID.randomUUID().toString().substring(0,32);
         updatedRequestContentObject.put("remoteSessionId", remoteSessionId);
+
+        JSONObject attributes = (JSONObject) updatedRequestContentObject.get("attributes");
+        long timestamp = System.currentTimeMillis();
+        attributes.put("toolTimestamp", timestamp);
+        updatedRequestContentObject.put("attributes", attributes);
+
+        return updatedRequestContentObject;
+    }
+
+    public void send(String url, String requestContent, Callback callback) throws JSONException {
+        JSONObject updatedRequestContentObject = randomizeUniqueAttrs(requestContent);
+
         String updatedRequestContentString = updatedRequestContentObject.toString();
+        Log.d(TAG, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        Log.d(TAG, updatedRequestContentString);
         RequestBody body = RequestBody.create(updatedRequestContentString.getBytes(StandardCharsets.UTF_8));
         Request request = new Request.Builder()
                 .url(url)
